@@ -18,13 +18,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final TokenRevocationService tokenRevocationService;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService,TokenRevocationService tokenRevocationService) {
         this.jwtService = jwtService;
+        this.tokenRevocationService = tokenRevocationService;
     }
 
     @Override
@@ -57,6 +60,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             Claims claims = jwtService.validateAndGetClaims(token);
+
+            String jti = claims.getId();
+
+            if (jti == null || tokenRevocationService.isRevoked(jti)) {
+                SecurityContextHolder.clearContext();
+
+                response.sendError(
+                        HttpServletResponse.SC_UNAUTHORIZED,
+                        "Token is invalid or has been revoked"
+                );
+
+                return;
+            }
 
             String userId = claims.getSubject();
             String role = claims.get("role", String.class);
