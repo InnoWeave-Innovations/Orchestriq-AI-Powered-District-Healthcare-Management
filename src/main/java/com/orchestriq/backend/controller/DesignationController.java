@@ -9,6 +9,7 @@ import com.orchestriq.backend.service.DesignationService;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class DesignationController {
         this.designationService = designationService;
     }
 
+    @PreAuthorize("hasRole('DISTRICT_ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public DesignationResponse createDesignation(
@@ -33,11 +35,13 @@ public class DesignationController {
         return designationService.createDesignation(request);
     }
 
+    @PreAuthorize("hasRole('DISTRICT_ADMIN')")
     @GetMapping
     public List<DesignationResponse> getAllDesignations() {
         return designationService.getAllDesignations();
     }
 
+    @PreAuthorize("hasRole('DISTRICT_ADMIN')")
     @GetMapping("/{id}")
     public DesignationResponse getDesignationById(
             @PathVariable UUID id) {
@@ -45,6 +49,7 @@ public class DesignationController {
         return designationService.getDesignationById(id);
     }
 
+    @PreAuthorize("hasRole('DISTRICT_ADMIN')")
     @PutMapping("/{id}")
     public DesignationResponse updateDesignation(
             @PathVariable UUID id,
@@ -53,6 +58,7 @@ public class DesignationController {
         return designationService.updateDesignation(id, request);
     }
 
+    @PreAuthorize("hasRole('DISTRICT_ADMIN')")
     @PatchMapping("/{id}/status")
     public DesignationResponse changeDesignationStatus(
             @PathVariable UUID id,
