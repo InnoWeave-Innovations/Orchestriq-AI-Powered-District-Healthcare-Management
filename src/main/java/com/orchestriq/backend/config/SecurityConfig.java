@@ -47,8 +47,31 @@ public class SecurityConfig {
                         )
                 )
                 .authorizeHttpRequests(auth -> auth
+
+                        // Public authentication endpoint
                         .requestMatchers("/api/v1/auth/login").permitAll()
-                        .anyRequest().authenticated())
+
+                        // Designation creation - District Admin only
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.POST,
+                                "/api/v1/designations"
+                        ).hasRole("DISTRICT_ADMIN")
+
+                        // Designation update - District Admin only
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.PUT,
+                                "/api/v1/designations/**"
+                        ).hasRole("DISTRICT_ADMIN")
+
+                        // Designation status change - District Admin only
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.PATCH,
+                                "/api/v1/designations/**"
+                        ).hasRole("DISTRICT_ADMIN")
+
+                        // All remaining authenticated endpoints
+                        .anyRequest().authenticated()
+                )
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
