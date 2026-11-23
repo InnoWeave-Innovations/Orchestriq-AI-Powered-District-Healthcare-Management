@@ -1,11 +1,7 @@
 
 package com.orchestriq.backend.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
+import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -48,7 +44,74 @@ public class User {
     private OffsetDateTime updatedAt;
 
     protected User() {
-        // Required by JPA
+    }
+
+    public static User create(
+            String fullName,
+            String email,
+            String passwordHash,
+            UUID roleId,
+            UUID designationId,
+            UUID facilityId,
+            UUID createdBy) {
+
+        User user = new User();
+
+        user.userId = UUID.randomUUID();
+        user.fullName = fullName;
+        user.email = email;
+        user.passwordHash = passwordHash;
+        user.roleId = roleId;
+        user.designationId = designationId;
+        user.facilityId = facilityId;
+        user.status = "ACTIVE";
+        user.createdBy = createdBy;
+
+        return user;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        OffsetDateTime now = OffsetDateTime.now();
+
+        if (userId == null) {
+            userId = UUID.randomUUID();
+        }
+
+        if (status == null) {
+            status = "ACTIVE";
+        }
+
+        if (createdAt == null) {
+            createdAt = now;
+        }
+
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = OffsetDateTime.now();
+    }
+
+    public void updateDetails(
+            String fullName,
+            String email,
+            UUID roleId,
+            UUID designationId,
+            UUID facilityId) {
+
+        this.fullName = fullName;
+        this.email = email;
+        this.roleId = roleId;
+        this.designationId = designationId;
+        this.facilityId = facilityId;
+    }
+
+    public void changeStatus(String status) {
+        this.status = status;
     }
 
     public UUID getUserId() {

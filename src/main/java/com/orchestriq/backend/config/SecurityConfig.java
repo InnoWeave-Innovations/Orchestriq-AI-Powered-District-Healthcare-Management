@@ -1,12 +1,17 @@
+
 package com.orchestriq.backend.config;
 
 import com.orchestriq.backend.security.JwtAuthenticationFilter;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import org.springframework.http.HttpMethod;
+
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -18,9 +23,9 @@ public class SecurityConfig {
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter) {
+
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
-
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -28,17 +33,24 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
+
                 .formLogin(form -> form.disable())
+
                 .httpBasic(basic -> basic.disable())
+
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
                 .exceptionHandling(exceptions -> exceptions
+
                         .authenticationEntryPoint((request, response, exception) ->
                                 response.sendError(
                                         jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED,
                                         "Unauthorized"
                                 )
                         )
+
                         .accessDeniedHandler((request, response, exception) ->
                                 response.sendError(
                                         jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN,
@@ -46,32 +58,52 @@ public class SecurityConfig {
                                 )
                         )
                 )
+
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public authentication endpoint
-                        .requestMatchers("/api/v1/auth/login").permitAll()
+                        // Public login
+                        .requestMatchers("/api/v1/auth/login")
+                        .permitAll()
 
-                        // Designation creation - District Admin only
+                        // User Management - District Admin only
+                        // User creation - District Admin and Hospital Admin
                         .requestMatchers(
-                                org.springframework.http.HttpMethod.POST,
+                                HttpMethod.POST,
+                                 "/api/v1/users"
+                                ).hasAnyRole("DISTRICT_ADMIN", "HOSPITAL_ADMIN")
+
+                        // All other User Management operations - District Admin only
+                        .requestMatchers(
+                                "/api/v1/users",
+                                        "/api/v1/users/**",
+                                        "/api/v1/facilities/*/users"
+                                ).hasRole("DISTRICT_ADMIN")
+
+                        // Designation creation
+                        .requestMatchers(
+                                HttpMethod.POST,
                                 "/api/v1/designations"
-                        ).hasRole("DISTRICT_ADMIN")
+                        )
+                        .hasRole("DISTRICT_ADMIN")
 
-                        // Designation update - District Admin only
+                        // Designation update
                         .requestMatchers(
-                                org.springframework.http.HttpMethod.PUT,
+                                HttpMethod.PUT,
                                 "/api/v1/designations/**"
-                        ).hasRole("DISTRICT_ADMIN")
+                        )
+                        .hasRole("DISTRICT_ADMIN")
 
-                        // Designation status change - District Admin only
+                        // Designation status
                         .requestMatchers(
-                                org.springframework.http.HttpMethod.PATCH,
+                                HttpMethod.PATCH,
                                 "/api/v1/designations/**"
-                        ).hasRole("DISTRICT_ADMIN")
+                        )
+                        .hasRole("DISTRICT_ADMIN")
 
-                        // All remaining authenticated endpoints
+                        // Everything else requires authentication
                         .anyRequest().authenticated()
                 )
+
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -79,5 +111,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-
 }
